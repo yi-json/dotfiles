@@ -1,0 +1,12 @@
+# schema https://docs.jj-vcs.dev/latest/config-schema.json
+[user]
+name = "Jason Yi"
+email = "j.hyonyi@gmail.com"
+
+[ui]
+editor = "nvim"
+
+[aliases]
+ls = ["log"]
+evolve = ["rebase", "-d", "trunk()", "--skip-emptied"]
+evolve-all = ["rebase", "-s", "roots(mutable()~trunk()::~empty())", "-d", "trunk()", "--skip-emptied"]
