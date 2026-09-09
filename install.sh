@@ -55,7 +55,7 @@ fi
 
 if grep -qE '^(name|email) = "\.\.\."$' "$REPO_DIR/config_jj_config.toml"; then
     echo
-    echo "Reminder: set your name and email in config_jj_config.toml (jj [user] section) before using jj."
+    echo "Reminder: set your name and email in ~/.config/jj/config.toml (jj [user] section) before using jj."
 fi
 
 echo
