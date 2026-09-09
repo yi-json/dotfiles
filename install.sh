@@ -9,17 +9,6 @@ BACKUP_DIR="$HOME/.dotfiles_backup/$(date +%Y%m%d%H%M%S)"
 
 echo "Checking prerequisites..."
 
-if ! command -v brew >/dev/null 2>&1; then
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-fi
-
-if [ -x /opt/homebrew/bin/brew ]; then
-    if ! grep -qF 'eval "$(/opt/homebrew/bin/brew shellenv)"' "$HOME/.zprofile" 2>/dev/null; then
-        echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> "$HOME/.zprofile"
-    fi
-    eval "$(/opt/homebrew/bin/brew shellenv)"
-fi
-
 if ! command -v cargo >/dev/null 2>&1; then
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     # shellcheck disable=SC1091
@@ -34,6 +23,7 @@ fi
 declare -a LINKS=(
     "tmux.conf:.tmux.conf"
     "jj_config.toml:.config/jj/config.toml"
+    "p10k.zsh:.p10k.zsh"
 )
 
 for entry in "${LINKS[@]}"; do
@@ -83,8 +73,13 @@ clone_if_missing "https://github.com/zsh-users/zsh-autosuggestions" "$ZSH_CUSTOM
 clone_if_missing "https://github.com/zsh-users/zsh-syntax-highlighting.git" "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
 
 mkdir -p "$HOME/Downloads"
-curl -fsSL "https://raw.githubusercontent.com/josean-dev/dev-environment-files/main/coolnight.itermcolors" \
-    --output "$HOME/Downloads/coolnight.itermcolors"
+if [ -f "$HOME/Downloads/coolnight.itermcolors" ]; then
+    echo "skip   coolnight.itermcolors (already downloaded)"
+else
+    curl -fsSL "https://raw.githubusercontent.com/josean-dev/dev-environment-files/main/coolnight.itermcolors" \
+        --output "$HOME/Downloads/coolnight.itermcolors"
+    echo "downloaded coolnight.itermcolors -> ~/Downloads/"
+fi
 
 if [ -f "$HOME/.zshrc" ]; then
     if grep -qE '^plugins=\(' "$HOME/.zshrc"; then
@@ -102,6 +97,53 @@ if [ -f "$HOME/.zshrc" ]; then
     else
         echo "warning: no ZSH_THEME= line found in ~/.zshrc, skipping"
     fi
-else
-    echo "warning: ~/.zshrc not found, skipping plugins/theme update"
 fi
+
+# Merge blocks from the repo's zshrc into ~/.zshrc, skipping any block whose
+# key line is already present anywhere in ~/.zshrc (no duplication).
+apply_zshrc_block() {
+    local dest="$1" block="$2" key="$3"
+
+    [ -n "$key" ] || return
+
+    if grep -qF -- "$key" "$dest"; then
+        return
+    fi
+
+    if [[ "$block" == *"p10k-instant-prompt"* ]]; then
+        { printf '%s\n\n' "$block"; cat "$dest"; } > "$dest.tmp"
+        mv "$dest.tmp" "$dest"
+        echo "added p10k instant-prompt block to top of ~/.zshrc"
+    else
+        printf '\n%s\n' "$block" >> "$dest"
+        echo "appended to ~/.zshrc: ${key}"
+    fi
+}
+
+merge_zshrc() {
+    local repo_zshrc="$REPO_DIR/zshrc"
+    local dest="$HOME/.zshrc"
+
+    [ -f "$dest" ] || touch "$dest"
+
+    local block="" key=""
+    while IFS= read -r line || [ -n "$line" ]; do
+        if [ -z "$line" ]; then
+            [ -n "$block" ] && apply_zshrc_block "$dest" "$block" "$key"
+            block=""
+            key=""
+            continue
+        fi
+        if [ -n "$block" ]; then
+            block="$block"$'\n'"$line"
+        else
+            block="$line"
+        fi
+        if [ -z "$key" ] && [[ "$line" != \#* ]]; then
+            key="$line"
+        fi
+    done < "$repo_zshrc"
+    [ -n "$block" ] && apply_zshrc_block "$dest" "$block" "$key"
+}
+
+merge_zshrc

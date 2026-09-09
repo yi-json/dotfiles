@@ -15,7 +15,6 @@ existing file to `~/.dotfiles_backup/<timestamp>/` first), then sets up oh-my-zs
 
 Prerequisites (skipped if already installed):
 
-- Homebrew, added to `~/.zprofile` via `brew shellenv`
 - Rust/cargo (via `rustup`), then `jj-cli` installed with `cargo install`
 
 Then oh-my-zsh setup:
@@ -25,3 +24,6 @@ Then oh-my-zsh setup:
 - downloads the `coolnight` iTerm2 color scheme to `~/Downloads/`
 - rewrites the `plugins=(...)` line in `~/.zshrc` to `plugins=(git zsh-autosuggestions zsh-syntax-highlighting web-search)`
 - rewrites the `ZSH_THEME=` line in `~/.zshrc` to `ZSH_THEME="powerlevel10k/powerlevel10k"`
+- merges any remaining blocks from the repo's `zshrc` into `~/.zshrc` (instant-prompt
+  block, autosuggestion tab-accept widget, p10k source line), skipping any block
+  already present so nothing is duplicated on re-runs
