@@ -22,7 +22,7 @@ fi
 # map: repo file -> destination path in $HOME
 declare -a LINKS=(
     "tmux.conf:.tmux.conf"
-    "jj_config.toml:.config/jj/config.toml"
+    "config_jj_config.toml:.config/jj/config.toml"
     "p10k.zsh:.p10k.zsh"
 )
 
@@ -51,6 +51,11 @@ done
 if [ -d "$BACKUP_DIR" ]; then
     echo
     echo "Backups saved to $BACKUP_DIR"
+fi
+
+if grep -qE '^(name|email) = "\.\.\."$' "$REPO_DIR/config_jj_config.toml"; then
+    echo
+    echo "Reminder: set your name and email in config_jj_config.toml (jj [user] section) before using jj."
 fi
 
 echo
